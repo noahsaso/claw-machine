@@ -11,5 +11,6 @@ export default defineConfig({
       include: ["src/**/*.ts"],
       exclude: ["src/**/*.test.ts", "src/index.ts"],
     },
+    onConsoleLog: () => false,
   },
 });
