@@ -50,7 +50,7 @@ export function LogModal({ task, onClose }: LogModalProps) {
     prevMessagesLengthRef.current = messages.length
   }, [messages, autoFollow])
 
-  // Detect user scrolling up to disable autoFollow
+  // Detect user scrolling to toggle autoFollow
   const handleScroll = useCallback(() => {
     // Ignore scroll events triggered by programmatic auto-scrolling
     if (isAutoScrollingRef.current) return
@@ -64,6 +64,11 @@ export function LogModal({ task, onClose }: LogModalProps) {
     // If user manually scrolled up (not at bottom), disable auto-follow
     if (!isAtBottom && autoFollow) {
       setAutoFollow(false)
+    }
+
+    // If user scrolled back to bottom, re-enable auto-follow
+    if (isAtBottom && !autoFollow) {
+      setAutoFollow(true)
     }
   }, [autoFollow])
 
