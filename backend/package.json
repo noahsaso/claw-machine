@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
@@ -16,6 +19,8 @@
   "devDependencies": {
     "@types/bun": "^1.2.0",
     "@types/uuid": "^10.0.0",
-    "typescript": "^5.7.0"
+    "@vitest/coverage-v8": "^4.0.18",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
   }
 }
