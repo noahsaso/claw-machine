@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { ZodError } from "zod";
 import {
   getAllTasks,
   getTaskById,
@@ -10,7 +11,7 @@ import {
   handleStatusChange,
   respawnTaskWorker,
 } from "../services/taskOperations";
-import type { CreateTaskInput, UpdateTaskInput } from "../types";
+import { CreateTaskSchema, UpdateTaskSchema } from "../schemas";
 import { broadcastTasks } from "../index";
 
 const tasks = new Hono();
@@ -34,14 +35,16 @@ tasks.get("/:id", (c) => {
 
 // POST /api/tasks - Create task
 tasks.post("/", async (c) => {
-  const body = await c.req.json<CreateTaskInput>();
-
-  if (!body.title || typeof body.title !== "string") {
-    return c.json({ error: "Title is required" }, 400);
-  }
-
-  if (!body.projectId || typeof body.projectId !== "string") {
-    return c.json({ error: "Project selection is required" }, 400);
+  let body;
+  try {
+    const rawBody = await c.req.json();
+    body = CreateTaskSchema.parse(rawBody);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const firstError = error.issues[0];
+      return c.json({ error: firstError.message }, 400);
+    }
+    return c.json({ error: "Invalid request body" }, 400);
   }
 
   // Create the task first (defaults to backlog if no status provided)
@@ -81,7 +84,18 @@ tasks.post("/", async (c) => {
 // PATCH /api/tasks/:id - Update task
 tasks.patch("/:id", async (c) => {
   const id = c.req.param("id");
-  const body = await c.req.json<UpdateTaskInput>();
+
+  let body;
+  try {
+    const rawBody = await c.req.json();
+    body = UpdateTaskSchema.parse(rawBody);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const firstError = error.issues[0];
+      return c.json({ error: firstError.message }, 400);
+    }
+    return c.json({ error: "Invalid request body" }, 400);
+  }
 
   const existingTask = getTaskById(id);
   if (!existingTask) {
