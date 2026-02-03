@@ -122,6 +122,25 @@ export function EditTaskModal({
             onDeleteProject={onDeleteProject}
             isLoading={isLoadingProjects}
           />
+
+          {(task.targetBranch || task.mergeStrategy) && (
+            <div className="flex gap-4 text-sm">
+              {task.targetBranch && (
+                <div>
+                  <span className="text-slate-500">Branch:</span>{' '}
+                  <span className="text-slate-300">{task.targetBranch}</span>
+                </div>
+              )}
+              {task.mergeStrategy && (
+                <div>
+                  <span className="text-slate-500">Merge:</span>{' '}
+                  <span className="text-slate-300">
+                    {task.mergeStrategy === 'direct' ? 'Direct' : 'PR'}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-2 p-4 border-t border-slate-700">

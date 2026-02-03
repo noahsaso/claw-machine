@@ -12,6 +12,8 @@ export type TaskWorkerStatus =
   | 'closed'
   | null
 
+export type MergeStrategy = 'direct' | 'pr' | null
+
 export interface Task {
   id: string
   title: string
@@ -20,12 +22,22 @@ export interface Task {
   assignedWorker?: string | null
   workerStatus?: TaskWorkerStatus
   projectId: string // Required - all tasks must belong to a project
+  targetBranch?: string | null // Target branch for merging work
+  mergeStrategy?: MergeStrategy // How to merge: direct, pr, or reviewer decides (null)
   logs?: string | null // JSON string of WorkerLogMessage[]
   createdAt: string
   updatedAt: string
   startedAt?: string | null // When task moved to in_progress
   completedAt?: string | null // When task moved to done
   error?: string | null // Error message from client
+}
+
+export interface CreateTaskInput {
+  title: string
+  description: string
+  projectId: string
+  targetBranch?: string | null
+  mergeStrategy?: MergeStrategy
 }
 
 export type WorkerStatus = 'spawning' | 'active' | 'busy' | 'idle' | 'closed'

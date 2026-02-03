@@ -13,7 +13,7 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { Column } from './Column'
 import { TaskCard } from './TaskCard'
-import type { Task, TaskStatus, Worker, Project } from '../types'
+import type { Task, TaskStatus, Worker, Project, MergeStrategy } from '../types'
 
 interface KanbanBoardProps {
   tasks: Task[]
@@ -21,7 +21,13 @@ interface KanbanBoardProps {
   onMoveTask: (taskId: string, status: TaskStatus) => void
   onDeleteTask: (taskId: string) => void
   onEditTask?: (task: Task) => void
-  onCreateTask: (title: string, description: string, projectId?: string) => void
+  onCreateTask: (
+    title: string,
+    description: string,
+    projectId?: string,
+    targetBranch?: string | null,
+    mergeStrategy?: MergeStrategy
+  ) => void
   projects?: Project[]
   defaultNewTaskProjectId?: string | null
   onCreateProject?: (path: string) => Promise<Project>
