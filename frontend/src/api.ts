@@ -72,4 +72,14 @@ export async function validatePassword(password: string): Promise<boolean> {
   }
 }
 
+export async function getProjectBranch(
+  projectId: string
+): Promise<{ branch: string }> {
+  const response = await apiFetch(`/api/projects/${projectId}/branch`)
+  if (!response.ok) {
+    throw new Error('Failed to fetch project branch')
+  }
+  return response.json()
+}
+
 export { API_BASE, WS_BASE }

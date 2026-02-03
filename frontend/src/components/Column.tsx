@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useDroppable, useDndMonitor } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { TaskCard } from './TaskCard'
 import { ProjectSelector } from './ProjectSelector'
-import type { Task, TaskStatus, Worker, Project } from '../types'
+import type { Task, TaskStatus, Worker, Project, MergeStrategy } from '../types'
+import { getProjectBranch } from '../api'
 import clsx from 'clsx'
 
 interface ColumnProps {
@@ -17,7 +18,9 @@ interface ColumnProps {
   onCreateTask?: (
     title: string,
     description: string,
-    projectId?: string
+    projectId?: string,
+    targetBranch?: string | null,
+    mergeStrategy?: MergeStrategy
   ) => void
   projects?: Project[]
   defaultProjectId?: string | null
@@ -60,6 +63,9 @@ export function Column({
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     null
   )
+  const [targetBranch, setTargetBranch] = useState<string>('')
+  const [mergeStrategy, setMergeStrategy] = useState<MergeStrategy>(null)
+  const [isFetchingBranch, setIsFetchingBranch] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isOverColumn, setIsOverColumn] = useState(false)
 
@@ -84,14 +90,36 @@ export function Column({
     },
   })
 
+  const handleSelectProject = useCallback((projectId: string | null) => {
+    setSelectedProjectId(projectId)
+    if (!projectId) {
+      setTargetBranch('')
+      setIsFetchingBranch(false)
+      return
+    }
+
+    setIsFetchingBranch(true)
+    getProjectBranch(projectId)
+      .then(({ branch }) => {
+        setTargetBranch(branch)
+      })
+      .catch((err) => {
+        console.error('Failed to fetch project branch:', err)
+        setTargetBranch('')
+      })
+      .finally(() => {
+        setIsFetchingBranch(false)
+      })
+  }, [])
+
   // Sync selected project with default when opening task creation form
   useEffect(() => {
     if (isCreating && defaultProjectId) {
       setTimeout(() => {
-        setSelectedProjectId(defaultProjectId)
+        handleSelectProject(defaultProjectId)
       }, 0)
     }
-  }, [isCreating, defaultProjectId])
+  }, [isCreating, defaultProjectId, handleSelectProject])
 
   const getWorkerForTask = (taskId: string) => {
     return workers.find((w) => w.currentTask === taskId)
@@ -120,10 +148,14 @@ export function Column({
       onCreateTask(
         newTaskTitle.trim(),
         newTaskDescription.trim(),
-        selectedProjectId
+        selectedProjectId,
+        targetBranch || null,
+        mergeStrategy
       )
       setNewTaskTitle('')
       setNewTaskDescription('')
+      setTargetBranch('')
+      setMergeStrategy(null)
       setIsCreating(false)
     }
   }
@@ -176,7 +208,7 @@ export function Column({
               <ProjectSelector
                 projects={projects}
                 selectedProjectId={selectedProjectId}
-                onSelectProject={setSelectedProjectId}
+                onSelectProject={handleSelectProject}
                 onCreateProject={onCreateProject}
                 isLoading={isLoadingProjects}
               />
@@ -196,6 +228,37 @@ export function Column({
               className="w-full bg-slate-700 text-slate-100 px-3 py-2 rounded-lg mb-2 border border-slate-600 focus:outline-none focus:border-indigo-500 resize-y text-sm"
               rows={4}
             />
+            <div className="flex gap-2 mb-2">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="main"
+                  value={targetBranch}
+                  onChange={(e) => setTargetBranch(e.target.value)}
+                  disabled={isFetchingBranch}
+                  className="w-full bg-slate-700 text-slate-100 px-3 py-1.5 rounded-lg border border-slate-600 focus:outline-none focus:border-indigo-500 text-xs disabled:opacity-50"
+                  title="Target branch"
+                />
+              </div>
+              <div className="flex-1">
+                <select
+                  value={mergeStrategy ?? ''}
+                  onChange={(e) =>
+                    setMergeStrategy(
+                      e.target.value === ''
+                        ? null
+                        : (e.target.value as 'direct' | 'pr')
+                    )
+                  }
+                  className="w-full bg-slate-700 text-slate-100 px-2 py-1.5 rounded-lg border border-slate-600 focus:outline-none focus:border-indigo-500 text-xs cursor-pointer"
+                  title="Merge strategy"
+                >
+                  <option value="">Reviewer decides</option>
+                  <option value="direct">Direct merge</option>
+                  <option value="pr">Create PR</option>
+                </select>
+              </div>
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={handleCreateTask}
