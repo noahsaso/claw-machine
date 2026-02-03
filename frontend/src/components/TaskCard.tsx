@@ -49,7 +49,7 @@ export function TaskCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id, disabled: task.isOptimistic })
+  } = useSortable({ id: task.id, disabled: task.isOptimistic || task.isDeleting })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -101,22 +101,22 @@ export function TaskCard({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...(task.isOptimistic ? {} : listeners)}
-      onClick={task.isOptimistic ? undefined : handleCardClick}
+      {...(task.isOptimistic || task.isDeleting ? {} : listeners)}
+      onClick={task.isOptimistic || task.isDeleting ? undefined : handleCardClick}
       className={clsx(
         'bg-slate-700 rounded-lg p-4 shadow-lg border border-slate-600',
         {
           'opacity-50 shadow-2xl': isDragging,
           'hover:border-indigo-500 hover:bg-slate-650 transition-colors':
-            isClickable && !task.isOptimistic,
-          'cursor-grab active:cursor-grabbing': !task.isOptimistic,
-          'opacity-70 cursor-default': task.isOptimistic,
+            isClickable && !task.isOptimistic && !task.isDeleting,
+          'cursor-grab active:cursor-grabbing': !task.isOptimistic && !task.isDeleting,
+          'opacity-70 cursor-default': task.isOptimistic || task.isDeleting,
         }
       )}
     >
       <div className="flex justify-between items-start mb-2">
         <h3 className="font-semibold text-slate-100 text-sm">{task.title}</h3>
-        {!task.isOptimistic && (
+        {!task.isOptimistic && !task.isDeleting && (
           <div className="flex items-center gap-1">
             {onEdit && task.status === 'backlog' && (
               <button
@@ -181,7 +181,12 @@ export function TaskCard({
       )}
 
       <div className="flex items-center justify-between">
-        {task.isOptimistic ? (
+        {task.isDeleting ? (
+          <div className="flex items-center gap-2 animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-red-500" />
+            <span className="text-xs text-red-400">Deleting...</span>
+          </div>
+        ) : task.isOptimistic ? (
           <div className="flex items-center gap-2 animate-pulse">
             <span className="w-2 h-2 rounded-full bg-indigo-500" />
             <span className="text-xs text-indigo-400">Creating...</span>

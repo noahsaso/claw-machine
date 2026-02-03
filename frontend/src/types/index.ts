@@ -31,6 +31,7 @@ export interface Task {
   completedAt?: string | null // When task moved to done
   error?: string | null // Error message from client
   isOptimistic?: boolean // True when task is being created (optimistic update)
+  isDeleting?: boolean // True when task is being deleted
 }
 
 export interface CreateTaskInput {

@@ -179,11 +179,25 @@ export function useTasks() {
   )
 
   const deleteTask = useCallback(async (id: string) => {
-    const response = await apiFetch(`/api/tasks/${id}`, {
-      method: 'DELETE',
-    })
-    if (!response.ok) throw new Error('Failed to delete task')
-    setTasks((prev) => prev.filter((t) => t.id !== id))
+    // Mark task as deleting immediately
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, isDeleting: true } : t))
+    )
+
+    try {
+      const response = await apiFetch(`/api/tasks/${id}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) throw new Error('Failed to delete task')
+      // Remove the task after successful deletion
+      setTasks((prev) => prev.filter((t) => t.id !== id))
+    } catch (err) {
+      // Revert isDeleting on error
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, isDeleting: false } : t))
+      )
+      throw err
+    }
   }, [])
 
   const updateTaskFromWebSocket = useCallback((task: Task) => {
