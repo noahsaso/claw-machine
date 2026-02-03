@@ -12,7 +12,7 @@ import {
   respawnTaskWorker,
 } from "../services/taskOperations";
 import { CreateTaskSchema, UpdateTaskSchema } from "../schemas";
-import { broadcastTasks } from "../index";
+import { broadcastTasks } from "../services/websocket";
 
 const tasks = new Hono();
 

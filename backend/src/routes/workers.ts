@@ -3,7 +3,7 @@ import { listWorkers, closeWorker } from "../services/claudeTeam";
 import { getAllTasks, getTaskByWorkerId } from "../services/db";
 import { respawnTaskWorker } from "../services/taskOperations";
 import { enrichWorkersWithTasks } from "../utils/enrichWorkers";
-import { broadcastTasks } from "../index";
+import { broadcastTasks } from "../services/websocket";
 
 const workers = new Hono();
 

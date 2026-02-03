@@ -37,8 +37,8 @@ vi.mock("../services/claudeTeam", () => ({
   ),
 }));
 
-// Mock the broadcast function
-vi.mock("../index", () => ({
+// Mock the broadcast function (imported from services/websocket)
+vi.mock("../services/websocket", () => ({
   broadcastTasks: vi.fn(() => mockWebsocket.broadcastTasks()),
 }));
 
