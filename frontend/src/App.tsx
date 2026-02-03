@@ -108,6 +108,7 @@ function Dashboard() {
     updateProject,
     deleteProject,
     isLoading: isLoadingProjects,
+    setLastUsedProject,
   } = useProjects()
 
   // Selected task for log modal
@@ -196,6 +197,17 @@ function Dashboard() {
       console.error('Failed to close worker:', err)
     }
   }
+
+  const handleCreateTask = useCallback(
+    async (
+      title: string,
+      description: string,
+      projectId?: string,
+      targetBranch?: string | null,
+      mergeStrategy?: MergeStrategy
+    ) => await createTask(title, description, projectId, targetBranch, mergeStrategy),
+    [createTask]
+  )
 
   const handleLogout = () => {
     clearPassword()
@@ -292,7 +304,8 @@ function Dashboard() {
               onMoveTask={moveTask}
               onDeleteTask={deleteTask}
               onEditTask={handleEditTask}
-              onCreateTask={createTask}
+              onCreateTask={handleCreateTask}
+              setLastUsedProject={setLastUsedProject}
               projects={projects}
               defaultNewTaskProjectId={defaultNewTaskProjectId}
               onCreateProject={createProject}

@@ -33,6 +33,7 @@ interface KanbanBoardProps {
   onCreateProject?: (path: string) => Promise<Project>
   isLoadingProjects?: boolean
   onViewTaskLogs?: (task: Task) => void
+  setLastUsedProject: (projectId: string | null) => void
 }
 
 const columns: { id: TaskStatus; title: string }[] = [
@@ -53,6 +54,7 @@ export function KanbanBoard({
   onCreateProject,
   isLoadingProjects,
   onViewTaskLogs,
+  setLastUsedProject,
 }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
 
@@ -138,6 +140,7 @@ export function KanbanBoard({
               }
               onCreateTask={column.id === 'backlog' ? onCreateTask : undefined}
               projects={column.id === 'backlog' ? projects : undefined}
+              setLastUsedProject={setLastUsedProject}
               defaultProjectId={
                 column.id === 'backlog' ? defaultNewTaskProjectId : undefined
               }

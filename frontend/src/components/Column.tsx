@@ -27,6 +27,7 @@ interface ColumnProps {
   onCreateProject?: (path: string) => Promise<Project>
   isLoadingProjects?: boolean
   onViewTaskLogs?: (task: Task) => void
+  setLastUsedProject: (projectId: string | null) => void
 }
 
 const columnColors: Record<TaskStatus, string> = {
@@ -55,6 +56,7 @@ export function Column({
   onCreateProject,
   isLoadingProjects,
   onViewTaskLogs,
+  setLastUsedProject,
 }: ColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id })
   const [isCreating, setIsCreating] = useState(false)
@@ -91,6 +93,7 @@ export function Column({
   })
 
   const handleSelectProject = useCallback((projectId: string | null) => {
+    setLastUsedProject(projectId)
     setSelectedProjectId(projectId)
     if (!projectId) {
       setTargetBranch('')
@@ -110,7 +113,7 @@ export function Column({
       .finally(() => {
         setIsFetchingBranch(false)
       })
-  }, [])
+  }, [setLastUsedProject])
 
   // Sync selected project with default when opening task creation form
   useEffect(() => {

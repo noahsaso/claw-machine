@@ -2,9 +2,18 @@ import { useState, useCallback, useEffect } from 'react'
 import type { Project } from '../types'
 import { apiFetch } from '../api'
 
+const LAST_USED_PROJECT_KEY = 'claw-machine-last-used-project'
+
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([])
   const [filterProjectId, setFilterProjectId] = useState<string | null>(null) // For filtering view (null = show all)
+  const [lastUsedProjectId, setLastUsedProjectIdState] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(LAST_USED_PROJECT_KEY)
+    } catch {
+      return null
+    }
+  })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -62,11 +71,28 @@ export function useProjects() {
     setFilterProjectId(projectId)
   }, [])
 
+  const setLastUsedProject = useCallback((projectId: string | null) => {
+    setLastUsedProjectIdState(projectId)
+    try {
+      if (projectId) {
+        localStorage.setItem(LAST_USED_PROJECT_KEY, projectId)
+      } else {
+        localStorage.removeItem(LAST_USED_PROJECT_KEY)
+      }
+    } catch {
+      // localStorage may be unavailable
+    }
+  }, [])
+
   const filteredProject = projects.find((p) => p.id === filterProjectId) || null
 
-  // Default for new tasks: use filter if active, otherwise first project
+  // Default for new tasks: use filter if active, then last used project, otherwise first project
+  // Validate that the stored project still exists
+  const validLastUsedProjectId = lastUsedProjectId && projects.some((p) => p.id === lastUsedProjectId)
+    ? lastUsedProjectId
+    : null
   const defaultNewTaskProjectId =
-    filterProjectId || (projects.length > 0 ? projects[0].id : null)
+    filterProjectId || validLastUsedProjectId || (projects.length > 0 ? projects[0].id : null)
 
   useEffect(() => {
     fetchProjects()
@@ -84,5 +110,6 @@ export function useProjects() {
     updateProject,
     deleteProject,
     setFilter,
+    setLastUsedProject,
   }
 }
