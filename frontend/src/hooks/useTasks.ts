@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import type { Task, TaskStatus } from '../types'
+import type { Task, TaskStatus, MergeStrategy } from '../types'
 import { apiFetch } from '../api'
 
 export function useTasks() {
@@ -26,10 +26,22 @@ export function useTasks() {
   }, [])
 
   const createTask = useCallback(
-    async (title: string, description: string, projectId?: string) => {
+    async (
+      title: string,
+      description: string,
+      projectId?: string,
+      targetBranch?: string | null,
+      mergeStrategy?: MergeStrategy
+    ) => {
       const response = await apiFetch('/api/tasks', {
         method: 'POST',
-        body: JSON.stringify({ title, description, projectId }),
+        body: JSON.stringify({
+          title,
+          description,
+          projectId,
+          targetBranch,
+          mergeStrategy,
+        }),
       })
       if (!response.ok) throw new Error('Failed to create task')
       const task = await response.json()
