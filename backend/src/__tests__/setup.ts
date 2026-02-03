@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import type { Task, Project, Worker, WorkerLog } from "../types";
+import type { Task, Project, Worker, WorkerLog, MergeStrategy } from "../types";
 
 // Mock data factories
 export function createMockProject(overrides: Partial<Project> = {}): Project {
@@ -20,6 +20,8 @@ export function createMockTask(overrides: Partial<Task> = {}): Task {
     status: "backlog",
     assignedWorker: null,
     projectId: "project-1",
+    targetBranch: null,
+    mergeStrategy: null,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,

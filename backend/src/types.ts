@@ -11,17 +11,23 @@ export interface Task {
   workerContext?: string | null;
   workerStatus?: TaskWorkerStatus;
   logs?: string | null; // JSON string of WorkerLog[]
+  targetBranch?: string | null; // Branch to merge work into (null means main)
+  mergeStrategy?: MergeStrategy; // How to complete the review
   createdAt: string;
   updatedAt: string;
   startedAt?: string | null; // When task moved to in_progress
   completedAt?: string | null; // When task moved to done
 }
 
+export type MergeStrategy = "direct" | "pr" | null;
+
 export interface CreateTaskInput {
   title: string;
   description?: string;
   status?: TaskStatus;
   projectId: string; // Required - all tasks must belong to a project
+  targetBranch?: string | null;
+  mergeStrategy?: MergeStrategy;
 }
 
 // Worker status values for tasks
@@ -40,6 +46,8 @@ export interface UpdateTaskInput {
   workerContext?: string | null;
   workerStatus?: TaskWorkerStatus;
   logs?: string | null; // JSON string of WorkerLog[]
+  targetBranch?: string | null;
+  mergeStrategy?: MergeStrategy;
   startedAt?: string | null;
   completedAt?: string | null;
 }

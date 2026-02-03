@@ -8,12 +8,17 @@ export const TaskWorkerStatusSchema = z
   .enum(["starting", "running", "reviewing", "closed"])
   .nullable();
 
+// Merge strategy for tasks
+export const MergeStrategySchema = z.enum(["direct", "pr"]).nullable();
+
 // CreateTask schema
 export const CreateTaskSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   status: TaskStatusSchema.optional(),
   projectId: z.string().min(1, "Project selection is required"),
+  targetBranch: z.string().nullable().optional(),
+  mergeStrategy: MergeStrategySchema.optional(),
 });
 
 // UpdateTask schema
@@ -26,6 +31,8 @@ export const UpdateTaskSchema = z.object({
   workerContext: z.string().nullable().optional(),
   workerStatus: TaskWorkerStatusSchema.optional(),
   logs: z.string().nullable().optional(),
+  targetBranch: z.string().nullable().optional(),
+  mergeStrategy: MergeStrategySchema.optional(),
   startedAt: z.string().nullable().optional(),
   completedAt: z.string().nullable().optional(),
 });

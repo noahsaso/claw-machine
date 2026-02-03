@@ -1,7 +1,11 @@
 import { Hono } from "hono";
 import { existsSync } from "fs";
 import { basename } from "path";
+import { exec } from "child_process";
+import { promisify } from "util";
 import { ZodError } from "zod";
+
+const execAsync = promisify(exec);
 import {
   getAllProjects,
   getProjectById,
@@ -116,6 +120,29 @@ projects.delete("/:id", (c) => {
   }
 
   return c.json({ success: true });
+});
+
+// GET /api/projects/:id/branch - Get current checked-out branch
+projects.get("/:id/branch", async (c) => {
+  const id = c.req.param("id");
+
+  const project = getProjectById(id);
+  if (!project) {
+    return c.json({ error: "Project not found" }, 404);
+  }
+
+  // Validate that the path still exists
+  if (!existsSync(project.path)) {
+    return c.json({ error: "Project path does not exist on filesystem" }, 400);
+  }
+
+  try {
+    const { stdout } = await execAsync(`git -C "${project.path}" branch --show-current`);
+    const branch = stdout.trim();
+    return c.json({ branch });
+  } catch (error) {
+    return c.json({ error: "Failed to get current branch" }, 500);
+  }
 });
 
 export { projects };
