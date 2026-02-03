@@ -109,6 +109,8 @@ function Dashboard() {
     deleteProject,
     isLoading: isLoadingProjects,
     setLastUsedProject,
+    getProjectSettings,
+    setProjectSettings,
   } = useProjects()
 
   // Selected task for log modal
@@ -306,6 +308,8 @@ function Dashboard() {
               onEditTask={handleEditTask}
               onCreateTask={handleCreateTask}
               setLastUsedProject={setLastUsedProject}
+              getProjectSettings={getProjectSettings}
+              setProjectSettings={setProjectSettings}
               projects={projects}
               defaultNewTaskProjectId={defaultNewTaskProjectId}
               onCreateProject={createProject}

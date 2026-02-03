@@ -7,6 +7,11 @@ import type { Task, TaskStatus, Worker, Project, MergeStrategy } from '../types'
 import { getProjectBranch } from '../api'
 import clsx from 'clsx'
 
+interface ProjectSettings {
+  targetBranch?: string
+  mergeStrategy?: MergeStrategy
+}
+
 interface ColumnProps {
   id: TaskStatus
   title: string
@@ -28,6 +33,8 @@ interface ColumnProps {
   isLoadingProjects?: boolean
   onViewTaskLogs?: (task: Task) => void
   setLastUsedProject: (projectId: string | null) => void
+  getProjectSettings: (projectId: string) => ProjectSettings
+  setProjectSettings: (projectId: string, settings: ProjectSettings) => void
 }
 
 const columnColors: Record<TaskStatus, string> = {
@@ -57,6 +64,8 @@ export function Column({
   isLoadingProjects,
   onViewTaskLogs,
   setLastUsedProject,
+  getProjectSettings,
+  setProjectSettings,
 }: ColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id })
   const [isCreating, setIsCreating] = useState(false)
@@ -97,23 +106,38 @@ export function Column({
     setSelectedProjectId(projectId)
     if (!projectId) {
       setTargetBranch('')
+      setMergeStrategy(null)
       setIsFetchingBranch(false)
       return
     }
 
-    setIsFetchingBranch(true)
-    getProjectBranch(projectId)
-      .then(({ branch }) => {
-        setTargetBranch(branch)
-      })
-      .catch((err) => {
-        console.error('Failed to fetch project branch:', err)
-        setTargetBranch('')
-      })
-      .finally(() => {
-        setIsFetchingBranch(false)
-      })
-  }, [setLastUsedProject])
+    // Load saved project settings
+    const savedSettings = getProjectSettings(projectId)
+    if (savedSettings.mergeStrategy !== undefined) {
+      setMergeStrategy(savedSettings.mergeStrategy)
+    } else {
+      setMergeStrategy(null)
+    }
+
+    // Use saved target branch if available, otherwise fetch from API
+    if (savedSettings.targetBranch) {
+      setTargetBranch(savedSettings.targetBranch)
+      setIsFetchingBranch(false)
+    } else {
+      setIsFetchingBranch(true)
+      getProjectBranch(projectId)
+        .then(({ branch }) => {
+          setTargetBranch(branch)
+        })
+        .catch((err) => {
+          console.error('Failed to fetch project branch:', err)
+          setTargetBranch('')
+        })
+        .finally(() => {
+          setIsFetchingBranch(false)
+        })
+    }
+  }, [setLastUsedProject, getProjectSettings])
 
   // Sync selected project with default when opening task creation form
   useEffect(() => {
@@ -148,6 +172,11 @@ export function Column({
         alert('Please select a project before creating a task')
         return
       }
+      // Save project settings for future tasks
+      setProjectSettings(selectedProjectId, {
+        targetBranch: targetBranch || undefined,
+        mergeStrategy,
+      })
       onCreateTask(
         newTaskTitle.trim(),
         newTaskDescription.trim(),

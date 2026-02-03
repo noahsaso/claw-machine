@@ -15,6 +15,11 @@ import { Column } from './Column'
 import { TaskCard } from './TaskCard'
 import type { Task, TaskStatus, Worker, Project, MergeStrategy } from '../types'
 
+interface ProjectSettings {
+  targetBranch?: string
+  mergeStrategy?: MergeStrategy
+}
+
 interface KanbanBoardProps {
   tasks: Task[]
   workers: Worker[]
@@ -34,6 +39,8 @@ interface KanbanBoardProps {
   isLoadingProjects?: boolean
   onViewTaskLogs?: (task: Task) => void
   setLastUsedProject: (projectId: string | null) => void
+  getProjectSettings: (projectId: string) => ProjectSettings
+  setProjectSettings: (projectId: string, settings: ProjectSettings) => void
 }
 
 const columns: { id: TaskStatus; title: string }[] = [
@@ -55,6 +62,8 @@ export function KanbanBoard({
   isLoadingProjects,
   onViewTaskLogs,
   setLastUsedProject,
+  getProjectSettings,
+  setProjectSettings,
 }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
 
@@ -141,6 +150,8 @@ export function KanbanBoard({
               onCreateTask={column.id === 'backlog' ? onCreateTask : undefined}
               projects={column.id === 'backlog' ? projects : undefined}
               setLastUsedProject={setLastUsedProject}
+              getProjectSettings={getProjectSettings}
+              setProjectSettings={setProjectSettings}
               defaultProjectId={
                 column.id === 'backlog' ? defaultNewTaskProjectId : undefined
               }

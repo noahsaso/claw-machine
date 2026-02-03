@@ -1,8 +1,16 @@
 import { useState, useCallback, useEffect } from 'react'
-import type { Project } from '../types'
+import type { Project, MergeStrategy } from '../types'
 import { apiFetch } from '../api'
 
 const LAST_USED_PROJECT_KEY = 'claw-machine-last-used-project'
+const PROJECT_SETTINGS_KEY = 'claw-machine-project-settings'
+
+interface ProjectSettings {
+  targetBranch?: string
+  mergeStrategy?: MergeStrategy
+}
+
+type ProjectSettingsMap = Record<string, ProjectSettings>
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -84,6 +92,30 @@ export function useProjects() {
     }
   }, [])
 
+  const getProjectSettings = useCallback((projectId: string): ProjectSettings => {
+    try {
+      const stored = localStorage.getItem(PROJECT_SETTINGS_KEY)
+      if (stored) {
+        const settings: ProjectSettingsMap = JSON.parse(stored)
+        return settings[projectId] || {}
+      }
+    } catch {
+      // localStorage may be unavailable or data corrupted
+    }
+    return {}
+  }, [])
+
+  const setProjectSettings = useCallback((projectId: string, settings: ProjectSettings) => {
+    try {
+      const stored = localStorage.getItem(PROJECT_SETTINGS_KEY)
+      const allSettings: ProjectSettingsMap = stored ? JSON.parse(stored) : {}
+      allSettings[projectId] = { ...allSettings[projectId], ...settings }
+      localStorage.setItem(PROJECT_SETTINGS_KEY, JSON.stringify(allSettings))
+    } catch {
+      // localStorage may be unavailable
+    }
+  }, [])
+
   const filteredProject = projects.find((p) => p.id === filterProjectId) || null
 
   // Default for new tasks: use filter if active, then last used project, otherwise first project
@@ -111,5 +143,7 @@ export function useProjects() {
     deleteProject,
     setFilter,
     setLastUsedProject,
+    getProjectSettings,
+    setProjectSettings,
   }
 }
