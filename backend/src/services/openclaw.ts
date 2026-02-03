@@ -17,6 +17,35 @@ export async function notifyClawForReview(
 ): Promise<boolean> {
   const backendUrl = `http://${HOST}:${PORT}`;
 
+  const targetBranch = task.targetBranch || "main";
+  const mergeStrategy = task.mergeStrategy;
+
+  // Build merge instructions based on strategy
+  let mergeInstructions: string;
+  if (mergeStrategy === "pr") {
+    mergeInstructions = `**Merge Strategy: Create Pull Request**
+\`\`\`bash
+cd ${worker.worktreePath || "<worktree>"}
+git push -u origin HEAD
+gh pr create --base ${targetBranch} --fill
+\`\`\``;
+  } else {
+    // Default: direct merge via cherry-pick
+    mergeInstructions = `**Merge Strategy: Direct (cherry-pick)**
+\`\`\`bash
+cd ${worker.projectPath || "<project>"}
+git cherry-pick <commit-hash> --onto ${targetBranch}
+\`\`\`
+Or if multiple commits:
+\`\`\`bash
+cd ${worker.worktreePath || "<worktree>"}
+git log --oneline ${targetBranch}..HEAD  # List commits to cherry-pick
+cd ${worker.projectPath || "<project>"}
+git checkout ${targetBranch}
+git cherry-pick <first-commit>^..<last-commit>
+\`\`\``;
+  }
+
   const message = `**Worker Review Needed**
 
 Worker **${worker.name}** has completed task: "${task.title}"
@@ -24,6 +53,8 @@ Worker **${worker.name}** has completed task: "${task.title}"
 **Task ID:** ${task.id}
 **Worker ID:** ${worker.id}
 **Description:** ${task.description || "(none)"}
+**Target Branch:** ${targetBranch}
+**Merge Strategy:** ${mergeStrategy || "direct (reviewer decides)"}
 
 Please review the worker's output and complete the task:
 1. Read worker logs: \`mcporter call claude-team.read_worker_logs session_id="${worker.name}"\`
@@ -35,6 +66,10 @@ Please review the worker's output and complete the task:
 
 Worktree: ${worker.worktreePath || "N/A"}
 Project: ${worker.projectPath || "N/A"}
+
+---
+
+${mergeInstructions}
 
 ---
 
