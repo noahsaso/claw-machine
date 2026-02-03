@@ -363,3 +363,7 @@ The reviewer agent receives instructions on how to:
 Built mostly by **OpenClaw** and **Claude Opus 4.5**, using the kanban interface
 itself to orchestrate the development. Every feature was implemented by AI
 workers managed through this very tool.
+
+---
+
+*Last tested: PR creation flow verification complete.*
