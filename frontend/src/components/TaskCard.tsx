@@ -49,7 +49,7 @@ export function TaskCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id })
+  } = useSortable({ id: task.id, disabled: task.isOptimistic })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -101,44 +101,48 @@ export function TaskCard({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
-      onClick={handleCardClick}
+      {...(task.isOptimistic ? {} : listeners)}
+      onClick={task.isOptimistic ? undefined : handleCardClick}
       className={clsx(
-        'bg-slate-700 rounded-lg p-4 shadow-lg border border-slate-600 cursor-grab active:cursor-grabbing',
+        'bg-slate-700 rounded-lg p-4 shadow-lg border border-slate-600',
         {
           'opacity-50 shadow-2xl': isDragging,
           'hover:border-indigo-500 hover:bg-slate-650 transition-colors':
-            isClickable,
+            isClickable && !task.isOptimistic,
+          'cursor-grab active:cursor-grabbing': !task.isOptimistic,
+          'opacity-70 cursor-default': task.isOptimistic,
         }
       )}
     >
       <div className="flex justify-between items-start mb-2">
         <h3 className="font-semibold text-slate-100 text-sm">{task.title}</h3>
-        <div className="flex items-center gap-1">
-          {onEdit && task.status === 'backlog' && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onEdit(task)
-              }}
-              className="text-slate-400 hover:text-indigo-400 text-xs cursor-pointer transition-colors"
-              title="Edit task"
-            >
-              ✎
-            </button>
-          )}
-          <button
-            onClick={handleDeleteClick}
-            className={clsx(
-              'transition-colors text-xs cursor-pointer',
-              confirmingDelete
-                ? 'text-red-400 hover:text-red-300 font-medium'
-                : 'text-slate-400 hover:text-red-400'
+        {!task.isOptimistic && (
+          <div className="flex items-center gap-1">
+            {onEdit && task.status === 'backlog' && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEdit(task)
+                }}
+                className="text-slate-400 hover:text-indigo-400 text-xs cursor-pointer transition-colors"
+                title="Edit task"
+              >
+                ✎
+              </button>
             )}
-          >
-            {confirmingDelete ? 'Confirm?' : '✕'}
-          </button>
-        </div>
+            <button
+              onClick={handleDeleteClick}
+              className={clsx(
+                'transition-colors text-xs cursor-pointer',
+                confirmingDelete
+                  ? 'text-red-400 hover:text-red-300 font-medium'
+                  : 'text-slate-400 hover:text-red-400'
+              )}
+            >
+              {confirmingDelete ? 'Confirm?' : '✕'}
+            </button>
+          </div>
+        )}
       </div>
 
       {task.description && (
@@ -177,7 +181,12 @@ export function TaskCard({
       )}
 
       <div className="flex items-center justify-between">
-        {task.workerStatus === 'reviewing' ? (
+        {task.isOptimistic ? (
+          <div className="flex items-center gap-2 animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-indigo-500" />
+            <span className="text-xs text-indigo-400">Creating...</span>
+          </div>
+        ) : task.workerStatus === 'reviewing' ? (
           <div className="flex items-center gap-2 animate-pulse">
             <span className="w-2 h-2 rounded-full bg-blue-500" />
             <span className="text-xs text-blue-400">

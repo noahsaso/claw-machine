@@ -9,6 +9,8 @@ export function useTasks() {
   const [pendingMoves, setPendingMoves] = useState<Set<string>>(new Set())
   // Track optimistic statuses so WebSocket updates don't overwrite them
   const optimisticStatusRef = useRef<Map<string, TaskStatus>>(new Map())
+  // Track optimistic task IDs (temporary IDs used during creation)
+  const optimisticTaskIdsRef = useRef<Set<string>>(new Set())
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -33,27 +35,65 @@ export function useTasks() {
       targetBranch?: string | null,
       mergeStrategy?: MergeStrategy
     ) => {
-      const response = await apiFetch('/api/tasks', {
-        method: 'POST',
-        body: JSON.stringify({
-          title,
-          description,
-          projectId,
-          targetBranch,
-          mergeStrategy,
-        }),
-      })
-      if (!response.ok) throw new Error('Failed to create task')
-      const task = await response.json()
-      // De-duplicate: WebSocket may have already added this task
-      setTasks((prev) => {
-        const exists = prev.some((t) => t.id === task.id)
-        if (exists) {
-          return prev.map((t) => (t.id === task.id ? task : t))
-        }
-        return [...prev, task]
-      })
-      return task
+      // Generate a temporary ID for optimistic update
+      const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      const now = new Date().toISOString()
+
+      // Create optimistic task
+      const optimisticTask: Task = {
+        id: tempId,
+        title,
+        description,
+        status: 'backlog',
+        projectId: projectId || '',
+        targetBranch,
+        mergeStrategy,
+        createdAt: now,
+        updatedAt: now,
+        isOptimistic: true,
+      }
+
+      // Track this optimistic task ID
+      optimisticTaskIdsRef.current.add(tempId)
+
+      // Add optimistic task immediately
+      setTasks((prev) => [...prev, optimisticTask])
+
+      try {
+        const response = await apiFetch('/api/tasks', {
+          method: 'POST',
+          body: JSON.stringify({
+            title,
+            description,
+            projectId,
+            targetBranch,
+            mergeStrategy,
+          }),
+        })
+        if (!response.ok) throw new Error('Failed to create task')
+        const task = await response.json()
+
+        // Remove optimistic task ID from tracking
+        optimisticTaskIdsRef.current.delete(tempId)
+
+        // Replace optimistic task with real task (or handle WebSocket already adding it)
+        setTasks((prev) => {
+          // Remove the optimistic task
+          const withoutOptimistic = prev.filter((t) => t.id !== tempId)
+          // Check if real task already exists (from WebSocket)
+          const exists = withoutOptimistic.some((t) => t.id === task.id)
+          if (exists) {
+            return withoutOptimistic.map((t) => (t.id === task.id ? task : t))
+          }
+          return [...withoutOptimistic, task]
+        })
+        return task
+      } catch (err) {
+        // Remove optimistic task on error
+        optimisticTaskIdsRef.current.delete(tempId)
+        setTasks((prev) => prev.filter((t) => t.id !== tempId))
+        throw err
+      }
     },
     []
   )
@@ -158,16 +198,32 @@ export function useTasks() {
 
   const setTasksFromWebSocket = useCallback((newTasks: Task[]) => {
     // Preserve optimistic statuses for pending moves
-    const optimistic = optimisticStatusRef.current
-    if (optimistic.size === 0) {
-      setTasks(newTasks)
-    } else {
-      setTasks(
-        newTasks.map((t) =>
-          optimistic.has(t.id) ? { ...t, status: optimistic.get(t.id)! } : t
-        )
+    const optimisticStatuses = optimisticStatusRef.current
+    const optimisticTaskIds = optimisticTaskIdsRef.current
+
+    setTasks((prev) => {
+      // Keep any optimistic tasks that are still pending
+      const optimisticTasks = prev.filter(
+        (t) => t.isOptimistic && optimisticTaskIds.has(t.id)
       )
-    }
+
+      // Apply optimistic statuses to incoming tasks
+      let mergedTasks =
+        optimisticStatuses.size === 0
+          ? newTasks
+          : newTasks.map((t) =>
+              optimisticStatuses.has(t.id)
+                ? { ...t, status: optimisticStatuses.get(t.id)! }
+                : t
+            )
+
+      // Add back optimistic tasks
+      if (optimisticTasks.length > 0) {
+        mergedTasks = [...mergedTasks, ...optimisticTasks]
+      }
+
+      return mergedTasks
+    })
   }, [])
 
   useEffect(() => {

@@ -30,6 +30,7 @@ export interface Task {
   startedAt?: string | null // When task moved to in_progress
   completedAt?: string | null // When task moved to done
   error?: string | null // Error message from client
+  isOptimistic?: boolean // True when task is being created (optimistic update)
 }
 
 export interface CreateTaskInput {
