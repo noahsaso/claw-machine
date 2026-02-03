@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Task, Project } from '../types'
+import type { Task, Project, MergeStrategy } from '../types'
 import { ProjectSelector } from './ProjectSelector'
 
 interface EditTaskModalProps {
@@ -7,7 +7,13 @@ interface EditTaskModalProps {
   projects: Project[]
   onSave: (
     taskId: string,
-    updates: { title: string; description: string; projectId?: string }
+    updates: {
+      title: string
+      description: string
+      projectId?: string
+      targetBranch?: string | null
+      mergeStrategy?: MergeStrategy
+    }
   ) => void
   onClose: () => void
   onCreateProject: (path: string) => Promise<Project>
@@ -29,6 +35,10 @@ export function EditTaskModal({
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description || '')
   const [projectId, setProjectId] = useState<string | null>(task.projectId)
+  const [targetBranch, setTargetBranch] = useState(task.targetBranch || '')
+  const [mergeStrategy, setMergeStrategy] = useState<MergeStrategy>(
+    task.mergeStrategy ?? null
+  )
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -50,6 +60,8 @@ export function EditTaskModal({
         title: title.trim(),
         description: description.trim(),
         projectId,
+        targetBranch: targetBranch.trim() || null,
+        mergeStrategy,
       })
       onClose()
     } catch (err) {
@@ -123,24 +135,40 @@ export function EditTaskModal({
             isLoading={isLoadingProjects}
           />
 
-          {(task.targetBranch || task.mergeStrategy) && (
-            <div className="flex gap-4 text-sm">
-              {task.targetBranch && (
-                <div>
-                  <span className="text-slate-500">Branch:</span>{' '}
-                  <span className="text-slate-300">{task.targetBranch}</span>
-                </div>
-              )}
-              {task.mergeStrategy && (
-                <div>
-                  <span className="text-slate-500">Merge:</span>{' '}
-                  <span className="text-slate-300">
-                    {task.mergeStrategy === 'direct' ? 'Direct' : 'PR'}
-                  </span>
-                </div>
-              )}
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <label className="block text-sm text-slate-400 mb-1">
+                Target Branch
+              </label>
+              <input
+                type="text"
+                placeholder="main"
+                value={targetBranch}
+                onChange={(e) => setTargetBranch(e.target.value)}
+                className="w-full bg-slate-700 text-slate-100 px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-indigo-500 text-sm"
+              />
             </div>
-          )}
+            <div className="flex-1">
+              <label className="block text-sm text-slate-400 mb-1">
+                Merge Strategy
+              </label>
+              <select
+                value={mergeStrategy ?? ''}
+                onChange={(e) =>
+                  setMergeStrategy(
+                    e.target.value === ''
+                      ? null
+                      : (e.target.value as 'direct' | 'pr')
+                  )
+                }
+                className="w-full bg-slate-700 text-slate-100 px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-indigo-500 text-sm cursor-pointer"
+              >
+                <option value="">Reviewer decides</option>
+                <option value="direct">Direct merge</option>
+                <option value="pr">Create PR</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end gap-2 p-4 border-t border-slate-700">

@@ -15,7 +15,13 @@ import {
   getWebSocketUrl,
   clearPassword,
 } from './api'
-import type { WebSocketMessage, TaskUpdatePayload, Worker, Task } from './types'
+import type {
+  WebSocketMessage,
+  TaskUpdatePayload,
+  Worker,
+  Task,
+  MergeStrategy,
+} from './types'
 import clsx from 'clsx'
 
 interface WorkersUpdateMessage {
@@ -210,7 +216,13 @@ function Dashboard() {
 
   const handleSaveTask = async (
     taskId: string,
-    updates: { title: string; description: string; projectId?: string }
+    updates: {
+      title: string
+      description: string
+      projectId?: string
+      targetBranch?: string | null
+      mergeStrategy?: MergeStrategy
+    }
   ) => {
     await updateTask(taskId, updates)
   }
