@@ -26,6 +26,8 @@ db.run(`
     worker_context TEXT,
     worker_status TEXT,
     logs TEXT,
+    target_branch TEXT,
+    merge_strategy TEXT CHECK(merge_strategy IN ('direct', 'pr') OR merge_strategy IS NULL),
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
     started_at TEXT,
@@ -33,11 +35,24 @@ db.run(`
   )
 `);
 
+// Add target_branch and merge_strategy columns if they don't exist (migration)
+try {
+  db.run(`ALTER TABLE tasks ADD COLUMN target_branch TEXT`);
+} catch {
+  // Column already exists
+}
+try {
+  db.run(`ALTER TABLE tasks ADD COLUMN merge_strategy TEXT CHECK(merge_strategy IN ('direct', 'pr') OR merge_strategy IS NULL)`);
+} catch {
+  // Column already exists
+}
+
 // Common SQL fragments
 const TASK_SELECT_COLUMNS = `
   id, title, description, status, assigned_worker as assignedWorker,
   worker_context as workerContext, worker_status as workerStatus,
   project_id as projectId, logs,
+  target_branch as targetBranch, merge_strategy as mergeStrategy,
   created_at as createdAt, updated_at as updatedAt,
   started_at as startedAt, completed_at as completedAt
 `;
@@ -78,8 +93,8 @@ export function createTask(input: CreateTaskInput): Task {
   const id = uuidv4();
   const now = new Date().toISOString();
   const stmt = db.prepare(`
-    INSERT INTO tasks (id, title, description, status, project_id, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO tasks (id, title, description, status, project_id, target_branch, merge_strategy, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   stmt.run(
     id,
@@ -87,6 +102,8 @@ export function createTask(input: CreateTaskInput): Task {
     input.description || "",
     input.status || "backlog",
     input.projectId,
+    input.targetBranch ?? null,
+    input.mergeStrategy ?? null,
     now,
     now
   );
@@ -131,6 +148,14 @@ export function updateTask(id: string, input: UpdateTaskInput): Task | null {
   if (input.logs !== undefined) {
     updates.push("logs = ?");
     values.push(input.logs);
+  }
+  if (input.targetBranch !== undefined) {
+    updates.push("target_branch = ?");
+    values.push(input.targetBranch);
+  }
+  if (input.mergeStrategy !== undefined) {
+    updates.push("merge_strategy = ?");
+    values.push(input.mergeStrategy);
   }
   if (input.startedAt !== undefined) {
     updates.push("started_at = ?");
