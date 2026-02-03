@@ -53,6 +53,8 @@ tasks.post("/", async (c) => {
     description: body.description,
     status: "backlog", // Always create as backlog first
     projectId: body.projectId,
+    targetBranch: body.targetBranch,
+    mergeStrategy: body.mergeStrategy,
   });
 
   // If requested status is not backlog, handle the transition
