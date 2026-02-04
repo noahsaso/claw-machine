@@ -39,13 +39,13 @@ interface ColumnProps {
 
 const columnColors: Record<TaskStatus, string> = {
   backlog: 'border-slate-500',
-  in_progress: 'border-blue-500',
+  in_progress: 'border-orange-500',
   done: 'border-green-500',
 }
 
 const columnBgColors: Record<TaskStatus, string> = {
   backlog: 'bg-slate-500/10',
-  in_progress: 'bg-blue-500/10',
+  in_progress: 'bg-orange-500/10',
   done: 'bg-green-500/10',
 }
 
